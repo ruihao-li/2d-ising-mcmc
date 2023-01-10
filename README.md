@@ -18,4 +18,6 @@ Another plot showing the performance/speed gain using Numba and Cython, normaliz
 
 ![speedup](img/ising_speedup.png)
 
+Here is a GIF showing the evolution of the spin configuration (80 x 80) as temperature increases:
 
+![ising_spins_gif](animation/ising_spins.gif)
