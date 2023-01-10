@@ -4,11 +4,13 @@ import time
 import pickle
 from tqdm import trange
 
+
 class Ising:
     """
     Pure Python implementation of Metropolis Monte Carlo Simulation of the 2D Ising model (square
     lattice).
     """
+
     def __init__(self, J, L, T):
         """
         Initialize the Ising model.
@@ -36,28 +38,43 @@ class Ising:
         energy = 0
         for i in range(self.L):
             for j in range(self.L):
-                energy += -self.J * self.spin_config[i, j] * (
-                    self.spin_config[i, (j + 1) % self.L] + self.spin_config[(i + 1) % self.L, j] + self.spin_config[i, (j - 1) % self.L] + self.spin_config[(i - 1) % self.L, j]
+                energy += (
+                    -self.J
+                    * self.spin_config[i, j]
+                    * (
+                        self.spin_config[i, (j + 1) % self.L]
+                        + self.spin_config[(i + 1) % self.L, j]
+                        + self.spin_config[i, (j - 1) % self.L]
+                        + self.spin_config[(i - 1) % self.L, j]
+                    )
                 )
-        return energy / 2 / self.L ** 2
+        return energy / 2 / self.L**2
 
     def compute_magnetization(self):
         """
         Compute the net absolute magnetization of the spin configuration (per site).
         """
-        return np.abs(np.sum(self.spin_config)) / self.L ** 2
+        return np.abs(np.sum(self.spin_config)) / self.L**2
 
     def mc_update(self):
         """
         Perform L^2 Metropolis steps to update the spin configuration.
         """
-        for _ in range(self.L ** 2):
+        for _ in range(self.L**2):
             # Pick a random site
             i = np.random.randint(self.L)
             j = np.random.randint(self.L)
             # Compute the change in energy
-            delta_E = 2 * self.J * self.spin_config[i, j] * (
-                self.spin_config[i, (j + 1) % self.L] + self.spin_config[(i + 1) % self.L, j] + self.spin_config[i, (j - 1) % self.L] + self.spin_config[(i - 1) % self.L, j]
+            delta_E = (
+                2
+                * self.J
+                * self.spin_config[i, j]
+                * (
+                    self.spin_config[i, (j + 1) % self.L]
+                    + self.spin_config[(i + 1) % self.L, j]
+                    + self.spin_config[i, (j - 1) % self.L]
+                    + self.spin_config[(i - 1) % self.L, j]
+                )
             )
             # Flip the spin if the energy decreases or if the Metropolis criterion is satisfied
             if delta_E <= 0:
@@ -77,9 +94,24 @@ class Ising:
         """
         beta = 1 / self.T
         k = 1 / np.sinh(2 * beta * self.J) ** 2
-        U = -self.J * self.coth(2 * beta * self.J) * (1 + 2 / np.pi * (2 * self.tanh(2 * beta * self.J) ** 2 - 1) * quad(lambda x: 1 / np.sqrt(1 - 4 * (k / (1 + k) ** 2) * (np.sin(x) ** 2)), 0, np.pi / 2)[0])
+        U = (
+            -self.J
+            * self.coth(2 * beta * self.J)
+            * (
+                1
+                + 2
+                / np.pi
+                * (2 * self.tanh(2 * beta * self.J) ** 2 - 1)
+                * quad(
+                    lambda x: 1
+                    / np.sqrt(1 - 4 * (k / (1 + k) ** 2) * (np.sin(x) ** 2)),
+                    0,
+                    np.pi / 2,
+                )[0]
+            )
+        )
         return U
-    
+
     def exact_magnetization(self):
         """
         Compute the exact spontaneous magnetization of the spin configuration (per site) for T < Tc;
@@ -100,11 +132,12 @@ class Ising:
     def tanh(x):
         return (np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x))
 
+
 def exact_solutions(J, L, T_low, T_high, nT):
     """
     Compute the exact solutions for the energy, magnetization, and critical temperature.
 
-    Args: 
+    Args:
         J (float): Coupling constant
         L (int): Linear size of the lattice
         T_low (float): Lower bound of the temperature range
@@ -124,6 +157,7 @@ def exact_solutions(J, L, T_low, T_high, nT):
         M_exact_array[i] = ising.exact_magnetization()
     T_c = ising.exact_critical_temp()
     return T_array, E_exact_array, M_exact_array, T_c
+
 
 def run_ising(J, L, T_low, T_high, nT, equil_steps, mc_steps, skip_steps):
     """

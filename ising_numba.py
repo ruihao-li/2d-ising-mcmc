@@ -4,50 +4,70 @@ import numba as nb
 from tqdm import trange
 from ising import Ising
 
+
 @nb.jit(nopython=True)
 def compute_energy(spin_config, J, L):
-        """
-        Compute the energy of the spin configuration (per site).
-        """
-        energy = 0
-        for i in range(L):
-            for j in range(L):
-                energy += -J * spin_config[i, j] * (
-                    spin_config[i, (j + 1) % L] + spin_config[(i + 1) % L, j] + spin_config[i, (j - 1) % L] + spin_config[(i - 1) % L, j]
+    """
+    Compute the energy of the spin configuration (per site).
+    """
+    energy = 0
+    for i in range(L):
+        for j in range(L):
+            energy += (
+                -J
+                * spin_config[i, j]
+                * (
+                    spin_config[i, (j + 1) % L]
+                    + spin_config[(i + 1) % L, j]
+                    + spin_config[i, (j - 1) % L]
+                    + spin_config[(i - 1) % L, j]
                 )
-        return energy / 2 / L ** 2
+            )
+    return energy / 2 / L**2
+
 
 @nb.jit(nopython=True)
 def compute_magnetization(spin_config, L):
-        """
-        Compute the net absolute magnetization of the spin configuration (per site).
-        """
-        return np.abs(np.sum(spin_config)) / L ** 2
+    """
+    Compute the net absolute magnetization of the spin configuration (per site).
+    """
+    return np.abs(np.sum(spin_config)) / L**2
+
 
 @nb.jit(nopython=True)
 def mc_update(spin_config, J, L, T):
-        """
-        Perform L^2 Metropolis steps to update the spin configuration.
-        """
-        for _ in range(L ** 2):
-            # Pick a random site
-            i = np.random.randint(L)
-            j = np.random.randint(L)
-            # Compute the change in energy
-            delta_E = 2 * J * spin_config[i, j] * (
-                spin_config[i, (j + 1) % L] + spin_config[(i + 1) % L, j] + spin_config[i, (j - 1) % L] + spin_config[(i - 1) % L, j]
+    """
+    Perform L^2 Metropolis steps to update the spin configuration.
+    """
+    for _ in range(L**2):
+        # Pick a random site
+        i = np.random.randint(L)
+        j = np.random.randint(L)
+        # Compute the change in energy
+        delta_E = (
+            2
+            * J
+            * spin_config[i, j]
+            * (
+                spin_config[i, (j + 1) % L]
+                + spin_config[(i + 1) % L, j]
+                + spin_config[i, (j - 1) % L]
+                + spin_config[(i - 1) % L, j]
             )
-            # Flip the spin if the energy decreases or if the Metropolis criterion is satisfied
-            if delta_E <= 0:
-                spin_config[i, j] *= -1
-            elif np.random.random() < np.exp(-delta_E / T):
-                spin_config[i, j] *= -1
+        )
+        # Flip the spin if the energy decreases or if the Metropolis criterion is satisfied
+        if delta_E <= 0:
+            spin_config[i, j] *= -1
+        elif np.random.random() < np.exp(-delta_E / T):
+            spin_config[i, j] *= -1
 
-class Ising_numba (Ising):
+
+class Ising_numba(Ising):
     """
     Numba-accelerated Python implementation of Metropolis Monte Carlo Simulation of the 2D Ising
     model (square lattice).
     """
+
     def __init__(self, J, L, T):
         super().__init__(J, L, T)
 
@@ -69,11 +89,12 @@ class Ising_numba (Ising):
         """
         mc_update(self.spin_config, self.J, self.L, self.T)
 
+
 def exact_solutions(J, L, T_low, T_high, nT):
     """
     Compute the exact solutions for the energy, magnetization, and critical temperature.
 
-    Args: 
+    Args:
         J (float): Coupling constant
         L (int): Linear size of the lattice
         T_low (float): Lower bound of the temperature range
@@ -93,7 +114,7 @@ def exact_solutions(J, L, T_low, T_high, nT):
         M_exact_array[i] = ising.exact_magnetization()
     T_c = ising.exact_critical_temp()
     return T_array, E_exact_array, M_exact_array, T_c
-    
+
 
 def run_ising_numba(J, L, T_low, T_high, nT, equil_steps, mc_steps, skip_steps):
     """
