@@ -1,15 +1,15 @@
 import numpy as np
-from scipy.integrate import quad
 import numba as nb
 from tqdm import trange
 from ising import Ising
 
 
 @nb.jit(nopython=True)
-def compute_energy(spin_config, J, L):
+def compute_energy(spin_config, J):
     """
-    Compute the energy of the spin configuration (per site).
+    Compute the energy of the spin configuration.
     """
+    L = spin_config.shape[0]
     energy = 0
     for i in range(L):
         for j in range(L):
@@ -23,22 +23,23 @@ def compute_energy(spin_config, J, L):
                     + spin_config[(i - 1) % L, j]
                 )
             )
-    return energy / 2 / L**2
+    return energy / 2
 
 
 @nb.jit(nopython=True)
-def compute_magnetization(spin_config, L):
+def compute_magnetization(spin_config):
     """
-    Compute the net absolute magnetization of the spin configuration (per site).
+    Compute the net absolute magnetization of the spin configuration.
     """
-    return np.abs(np.sum(spin_config)) / L**2
+    return np.abs(np.sum(spin_config))
 
 
 @nb.jit(nopython=True)
-def mc_update(spin_config, J, L, T):
+def mc_update(spin_config, J, T):
     """
     Perform L^2 Metropolis steps to update the spin configuration.
     """
+    L = spin_config.shape[0]
     for _ in range(L**2):
         # Pick a random site
         i = np.random.randint(L)
@@ -73,21 +74,21 @@ class Ising_numba(Ising):
 
     def compute_energy(self):
         """
-        Compute the energy of the spin configuration (per site).
+        Compute the energy of the spin configuration.
         """
-        return compute_energy(self.spin_config, self.J, self.L)
+        return compute_energy(self.spin_config, self.J)
 
     def compute_magnetization(self):
         """
-        Compute the net absolute magnetization of the spin configuration (per site).
+        Compute the net absolute magnetization of the spin configuration.
         """
-        return compute_magnetization(self.spin_config, self.L)
+        return compute_magnetization(self.spin_config)
 
     def mc_update(self):
         """
         Perform L^2 Metropolis steps to update the spin configuration.
         """
-        mc_update(self.spin_config, self.J, self.L, self.T)
+        mc_update(self.spin_config, self.J, self.T)
 
 
 def exact_solutions(J, L, T_low, T_high, nT):
@@ -131,7 +132,8 @@ def run_ising_numba(J, L, T_low, T_high, nT, equil_steps, mc_steps, skip_steps):
         skip_steps (int): Number of Monte Carlo steps to skip between measurements
 
     Returns:
-        (np.array, np.array, np.array): Arrays of energies, magnetizations, and spin configurations
+        (np.array, np.array, np.array): Arrays of energies (per site), magnetizations (per site),
+        and spin configurations
     """
     T_array = np.linspace(T_low, T_high, nT)
     # Initialize arrays to store the energies and magnetizations
@@ -155,8 +157,8 @@ def run_ising_numba(J, L, T_low, T_high, nT, equil_steps, mc_steps, skip_steps):
                 Et += ising.compute_energy()
                 Mt += ising.compute_magnetization()
         # Average the energy and magnetization
-        E_array[i] = Et / (mc_steps // skip_steps)
-        M_array[i] = Mt / (mc_steps // skip_steps)
+        E_array[i] = Et / (mc_steps // skip_steps) / L**2
+        M_array[i] = Mt / (mc_steps // skip_steps) / L**2
         # Store the final spin configuration
         spin_config_array[i] = ising.spin_config
     return E_array, M_array, spin_config_array

@@ -1,7 +1,5 @@
 import numpy as np
 from scipy.integrate import quad
-import time
-import pickle
 from tqdm import trange
 
 
@@ -33,7 +31,7 @@ class Ising:
 
     def compute_energy(self):
         """
-        Compute the energy of the spin configuration (per site).
+        Compute the energy of the spin configuration.
         """
         energy = 0
         for i in range(self.L):
@@ -48,13 +46,13 @@ class Ising:
                         + self.spin_config[(i - 1) % self.L, j]
                     )
                 )
-        return energy / 2 / self.L**2
+        return energy / 2
 
     def compute_magnetization(self):
         """
-        Compute the net absolute magnetization of the spin configuration (per site).
+        Compute the net absolute magnetization of the spin configuration.
         """
-        return np.abs(np.sum(self.spin_config)) / self.L**2
+        return np.abs(np.sum(self.spin_config))
 
     def mc_update(self):
         """
@@ -174,7 +172,8 @@ def run_ising(J, L, T_low, T_high, nT, equil_steps, mc_steps, skip_steps):
         skip_steps (int): Number of Monte Carlo steps to skip between measurements
 
     Returns:
-        (np.array, np.array, np.array): Arrays of energies, magnetizations, and spin configurations
+        (np.array, np.array, np.array): Arrays of energies (per site), magnetizations (per site),
+        and spin configurations
     """
     T_array = np.linspace(T_low, T_high, nT)
     # Initialize arrays to store the energies and magnetizations
@@ -198,8 +197,8 @@ def run_ising(J, L, T_low, T_high, nT, equil_steps, mc_steps, skip_steps):
                 Et += ising.compute_energy()
                 Mt += ising.compute_magnetization()
         # Average the energy and magnetization
-        E_array[i] = Et / (mc_steps // skip_steps)
-        M_array[i] = Mt / (mc_steps // skip_steps)
+        E_array[i] = Et / (mc_steps // skip_steps) / L ** 2
+        M_array[i] = Mt / (mc_steps // skip_steps) / L ** 2
         # Store the final spin configuration
         spin_config_array[i] = ising.spin_config
     return E_array, M_array, spin_config_array

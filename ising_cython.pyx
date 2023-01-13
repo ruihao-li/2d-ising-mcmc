@@ -1,5 +1,4 @@
 cimport cython
-from scipy.integrate import quad
 import numpy as np
 
 cimport numpy as np
@@ -10,8 +9,6 @@ from cython.parallel import prange
 cdef extern from "limits.h":
     int RAND_MAX
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 @cython.cdivision(True)
 cdef int mod(int a, int b) nogil:
     if a < 0:
@@ -124,7 +121,6 @@ cdef int mc_update(float J, int[:, :] spin_config, double T) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-@cython.cdivision(False)
 cpdef run_ising_cython(double J, int L, double T_low, double T_high, int nT, int equil_steps, int mc_steps, int skip_steps):
     """
     Run the Monte Carlo simulation for a range of temperatures.
